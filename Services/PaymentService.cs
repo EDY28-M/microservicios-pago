@@ -338,6 +338,9 @@ namespace PaymentGatewayService.Services
 
         public async Task<bool> HasPaidMatriculaAsync(int idEstudiante, int idPeriodo)
         {
+            _logger.LogInformation("HasPaidMatriculaAsync called: idEstudiante={IdEstudiante}, idPeriodo={IdPeriodo}", 
+                idEstudiante, idPeriodo);
+
             // Solo verificamos que exista un pago exitoso de matrícula
             // No requerimos Procesado=true porque el webhook puede tardar
             var payment = await _context.Payments
@@ -348,7 +351,11 @@ namespace PaymentGatewayService.Services
                     (p.MetadataJson != null && p.MetadataJson.Contains("matricula")))
                 .FirstOrDefaultAsync();
 
-            return payment != null;
+            var result = payment != null;
+            _logger.LogInformation("HasPaidMatriculaAsync result: {Result} (payment found: {Found})", 
+                result, payment?.Id);
+            
+            return result;
         }
     }
 }
