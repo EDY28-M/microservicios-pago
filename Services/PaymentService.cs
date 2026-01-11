@@ -273,8 +273,8 @@ namespace PaymentGatewayService.Services
 
         public async Task<PaymentResponseDto> CreateMatriculaPaymentIntentAsync(int idEstudiante, int idPeriodo)
         {
-            // Monto fijo de matrícula: 1 PEN
-            const decimal matriculaAmount = 1.00m;
+            // Monto fijo de matrícula: 5 PEN (mínimo de Stripe es ~2 PEN)
+            const decimal matriculaAmount = 5.00m; 
             const string currency = "pen"; // Soles peruanos
 
             // Preparar metadata
