@@ -198,7 +198,33 @@ namespace PaymentGatewayService.Controllers
         }
 
         /// <summary>
-        /// Verifica si el estudiante ha pagado la matrícula para el período
+        /// Verifica si el estudiante ha pagado la matrícula para el período (endpoint directo)
+        /// Este endpoint recibe el idEstudiante directamente del backend principal
+        /// </summary>
+        [HttpGet("verificar-matricula-pagada/{idEstudiante}/{idPeriodo}")]
+        [AllowAnonymous] // Permitir llamadas desde el backend principal sin JWT
+        public async Task<ActionResult<bool>> VerificarMatriculaPagadaDirect(int idEstudiante, int idPeriodo)
+        {
+            try
+            {
+                _logger.LogInformation("Verificando matrícula pagada: idEstudiante={IdEstudiante}, idPeriodo={IdPeriodo}", 
+                    idEstudiante, idPeriodo);
+
+                var pagado = await _paymentService.HasPaidMatriculaAsync(idEstudiante, idPeriodo);
+
+                _logger.LogInformation("Resultado verificación: pagado={Pagado}", pagado);
+
+                return Ok(new { pagado });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al verificar pago de matrícula");
+                return StatusCode(500, new { mensaje = "Error al verificar pago de matrícula", detalle = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Verifica si el estudiante ha pagado la matrícula para el período (legacy)
         /// </summary>
         [HttpGet("verificar-matricula-pagada/{idPeriodo}")]
         public async Task<ActionResult<bool>> VerificarMatriculaPagada(int idPeriodo)
