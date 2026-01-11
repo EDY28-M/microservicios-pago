@@ -83,12 +83,31 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+// Habilitar Swagger siempre (para debugging en producción también)
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// Middleware de manejo de excepciones global
+app.UseExceptionHandler(errorApp =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        if (error != null)
+        {
+            var ex = error.Error;
+            await context.Response.WriteAsJsonAsync(new { 
+                mensaje = "Error interno del servidor", 
+                detalle = ex.Message,
+                tipo = ex.GetType().Name
+            });
+            Console.WriteLine($"[ERROR] {ex.GetType().Name}: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+        }
+    });
+});
 
 app.UseCors("AllowAll");
 
@@ -100,9 +119,16 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Health check
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+// Health check mejorado
+app.MapGet("/health", () => Results.Ok(new { 
+    status = "healthy", 
+    timestamp = DateTime.UtcNow,
+    environment = app.Environment.EnvironmentName,
+    version = "1.0.0"
+}));
 
 Console.WriteLine($"[LISTO] Payment Gateway Service iniciando en: {string.Join(", ", app.Urls)}");
+Console.WriteLine($"[INFO] Environment: {app.Environment.EnvironmentName}");
 
 app.Run();
+
