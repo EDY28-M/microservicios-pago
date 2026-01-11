@@ -338,12 +338,13 @@ namespace PaymentGatewayService.Services
 
         public async Task<bool> HasPaidMatriculaAsync(int idEstudiante, int idPeriodo)
         {
+            // Solo verificamos que exista un pago exitoso de matrícula
+            // No requerimos Procesado=true porque el webhook puede tardar
             var payment = await _context.Payments
                 .Where(p => 
                     p.IdEstudiante == idEstudiante &&
                     p.IdPeriodo == idPeriodo &&
                     p.Status == "succeeded" &&
-                    p.Procesado &&
                     (p.MetadataJson != null && p.MetadataJson.Contains("matricula")))
                 .FirstOrDefaultAsync();
 
