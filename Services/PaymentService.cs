@@ -338,8 +338,22 @@ namespace PaymentGatewayService.Services
 
         public async Task<bool> HasPaidMatriculaAsync(int idEstudiante, int idPeriodo)
         {
-            _logger.LogInformation("HasPaidMatriculaAsync called: idEstudiante={IdEstudiante}, idPeriodo={IdPeriodo}", 
+            _logger.LogInformation("[HASPAID] Verificando pago de matrícula: idEstudiante={IdEstudiante}, idPeriodo={IdPeriodo}", 
                 idEstudiante, idPeriodo);
+
+            // Buscar todos los pagos del estudiante en el periodo para debugging
+            var allPayments = await _context.Payments
+                .Where(p => p.IdEstudiante == idEstudiante && p.IdPeriodo == idPeriodo)
+                .ToListAsync();
+
+            _logger.LogInformation("[HASPAID] Total pagos encontrados para estudiante {IdEstudiante}, periodo {IdPeriodo}: {Count}", 
+                idEstudiante, idPeriodo, allPayments.Count);
+
+            foreach (var p in allPayments)
+            {
+                _logger.LogInformation("[HASPAID] Pago ID={PaymentId}, Status={Status}, Metadata={Metadata}, Amount={Amount}", 
+                    p.Id, p.Status, p.MetadataJson, p.Amount);
+            }
 
             // Solo verificamos que exista un pago exitoso de matrícula
             // No requerimos Procesado=true porque el webhook puede tardar
@@ -348,11 +362,11 @@ namespace PaymentGatewayService.Services
                     p.IdEstudiante == idEstudiante &&
                     p.IdPeriodo == idPeriodo &&
                     p.Status == "succeeded" &&
-                    (p.MetadataJson != null && p.MetadataJson.Contains("matricula")))
+                    (p.MetadataJson != null && (p.MetadataJson.Contains("matricula") || p.MetadataJson.Contains("\"tipo\":\"matricula\""))))
                 .FirstOrDefaultAsync();
 
             var result = payment != null;
-            _logger.LogInformation("HasPaidMatriculaAsync result: {Result} (payment found: {Found})", 
+            _logger.LogInformation("[HASPAID] Resultado: {Result} (payment ID: {PaymentId})", 
                 result, payment?.Id);
             
             return result;

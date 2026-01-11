@@ -207,18 +207,20 @@ namespace PaymentGatewayService.Controllers
         {
             try
             {
-                _logger.LogInformation("Verificando matrícula pagada: idEstudiante={IdEstudiante}, idPeriodo={IdPeriodo}", 
+                _logger.LogInformation("[VERIFICAR] Iniciando verificación de matrícula pagada: idEstudiante={IdEstudiante}, idPeriodo={IdPeriodo}", 
                     idEstudiante, idPeriodo);
 
                 var pagado = await _paymentService.HasPaidMatriculaAsync(idEstudiante, idPeriodo);
 
-                _logger.LogInformation("Resultado verificación: pagado={Pagado}", pagado);
+                _logger.LogInformation("[VERIFICAR] Resultado verificación: pagado={Pagado} para estudiante {IdEstudiante}, periodo {IdPeriodo}", 
+                    pagado, idEstudiante, idPeriodo);
 
                 return Ok(new { pagado });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al verificar pago de matrícula");
+                _logger.LogError(ex, "[VERIFICAR] Error al verificar pago de matrícula para estudiante {IdEstudiante}, periodo {IdPeriodo}", 
+                    idEstudiante, idPeriodo);
                 return StatusCode(500, new { mensaje = "Error al verificar pago de matrícula", detalle = ex.Message });
             }
         }
