@@ -151,6 +151,53 @@ namespace PaymentGatewayService.Controllers
         }
 
         /// <summary>
+        /// Confirma un pago exitoso y lo marca como procesado
+        /// Este endpoint se llama desde el frontend después de un pago exitoso en Stripe
+        /// </summary>
+        [HttpPost("confirm-payment/{paymentIntentId}")]
+        public async Task<ActionResult> ConfirmPayment(string paymentIntentId)
+        {
+            try
+            {
+                // Obtener el ID del estudiante desde el backend principal
+                var idEstudiante = await GetEstudianteIdFromBackendAsync();
+                if (idEstudiante == null)
+                {
+                    return Unauthorized(new { mensaje = "No se pudo obtener el ID del estudiante" });
+                }
+
+                // Verificar que el pago existe y pertenece al estudiante
+                var payment = await _paymentService.GetPaymentByIntentIdAsync(paymentIntentId);
+                if (payment == null)
+                {
+                    return NotFound(new { mensaje = "Pago no encontrado" });
+                }
+
+                if (payment.IdEstudiante != idEstudiante.Value)
+                {
+                    return Forbid("No tienes permiso para confirmar este pago");
+                }
+
+                // Procesar el pago
+                var success = await _paymentService.ProcessPaymentSuccessAsync(paymentIntentId);
+                
+                if (success)
+                {
+                    return Ok(new { mensaje = "Pago confirmado exitosamente", procesado = true });
+                }
+                else
+                {
+                    return BadRequest(new { mensaje = "Error al procesar el pago", procesado = false });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al confirmar pago {PaymentIntentId}", paymentIntentId);
+                return StatusCode(500, new { mensaje = "Error al confirmar pago", detalle = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Verifica si el estudiante ha pagado la matrícula para el período
         /// </summary>
         [HttpGet("verificar-matricula-pagada/{idPeriodo}")]
