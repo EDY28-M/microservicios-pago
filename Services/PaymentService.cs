@@ -28,7 +28,6 @@ namespace PaymentGatewayService.Services
 
         public async Task<PaymentResponseDto> CreatePaymentIntentAsync(int idEstudiante, CreatePaymentIntentDto dto)
         {
-        {
             // Calcular total
             var total = dto.Cursos.Sum(c => c.Precio * c.Cantidad);
 
